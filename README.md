@@ -21,12 +21,12 @@
   - [Backend](#backend)
 
 ## Team Members
-| Name                 Email Address           |
-|---------------------- |--------------------------|
-| Krysten Wong         | krystenwong.2023@scis.smu.edu.sg       |
-| Lee Jia Wen          | jiawen.lee.2022@scis.smu.edu.sg       |
-| Quek De Wang         | dewang.quek.2023@scis.smu.edu.sg       |
-| Tan Wei Jun Brandon  | brandon.tan.2023@scis.smu.edu.sg       |
+| Team Member Name        | SMU Email Address                  |
+|-------------------------|------------------------------------|
+| Krysten Wong            | krystenwong.2023@scis.smu.edu.sg  |
+| Lee Jia Wen             | jiawen.lee.2022@scis.smu.edu.sg   |
+| Quek De Wang            | dewang.quek.2023@scis.smu.edu.sg  |
+| Tan Wei Jun Brandon     | brandon.tan.2023@scis.smu.edu.sg  |
 
 ## Project Overview
 
