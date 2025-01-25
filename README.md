@@ -44,7 +44,19 @@
 
 ## Step to Run Codes Locally
 ```
-python app/app.py
+pip install -r requirements.txt
+```
+
+```
+python -m spacy download en_core_web_sm
+```
+
+```
+cd app
+```
+
+```
+cd python app.py
 ```
 
 ## Tech Stack

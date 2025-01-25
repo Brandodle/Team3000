@@ -1,45 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TEAM3000</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://unpkg.com/vue@3.2.47/dist/vue.global.js"></script>
 </head>
 <body>
-    <div id="app">
-        <h1>NLP Data Processor</h1>
-        <form @submit.prevent="submitData">
-            <textarea v-model="inputText" placeholder="Enter text"></textarea>
-            <button type="submit">Submit</button>
-        </form>
-        <div v-if="response">
-            <h3>Response from Backend:</h3>
-            <pre>{{ response }}</pre>
-        </div>
+  <div id="app" class="container mt-4">
+    <h1 class="text-center">Analytics Dashboard</h1>
+
+    <!-- Upload File Section -->
+    <div class="card mt-4">
+      <div class="card-header">Upload File</div>
+      <div class="card-body">
+        <input type="file" class="form-control mb-3" @change="handleFileUpload">
+        <button class="btn btn-primary w-100" @click="uploadFile">Upload and Process</button>
+      </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script>
-        new Vue({
-            el: '#app',
-            data: {
-                inputText: '',
-                response: null,
-            },
-            methods: {
-                async submitData() {
-                    try {
-                        const res = await axios.post('/api/process', {
-                            text: this.inputText,
-                        });
-                        this.response = res.data;
-                    } catch (error) {
-                        console.error("Error submitting data:", error);
-                    }
-                },
-            },
-        });
-    </script>
+
+    <!-- Insights Section -->
+    <div v-if="insights.most_frequent_entity" class="card mt-4">
+      <div class="card-header">Insights</div>
+      <div class="card-body">
+        <p><strong>Most Frequent Entity:</strong> [[ insights.most_frequent_entity[0] ]] (Count: [[ insights.most_frequent_entity[1] ]])</p>
+        <h5>Top Relationships:</h5>
+        <ul>
+          <li v-for="(count, rel) in insights.relationship_summary" :key="rel">
+            [[ rel ]]: [[ count ]]
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Tables with Pagination -->
+    <div class="row mt-4">
+      <!-- Extracted Entities -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">Extracted Entities</div>
+          <div class="card-body">
+            <table class="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Text</th>
+                  <th>Label</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(entity, index) in paginatedEntities" :key="index">
+                  <td>[[ currentPageEntities * itemsPerPageEntities + index + 1 ]]</td>
+                  <td>[[ entity.text ]]</td>
+                  <td>[[ entity.label ]]</td>
+                </tr>
+              </tbody>
+            </table>
+            <nav class="d-flex justify-content-center">
+              <ul class="pagination">
+                <li class="page-item" :class="{ disabled: currentPageEntities === 0 }">
+                  <button class="page-link" @click="prevPageEntities">Previous</button>
+                </li>
+                <li class="page-item" :class="{ disabled: currentPageEntities >= totalPagesEntities - 1 }">
+                  <button class="page-link" @click="nextPageEntities">Next</button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <!-- Extracted Relationships -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">Extracted Relationships</div>
+          <div class="card-body">
+            <table class="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  <th>Subject</th>
+                  <th>Action</th>
+                  <th>Object</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(rel, index) in paginatedRelationships" :key="index">
+                  <td>[[ rel.subject ]]</td>
+                  <td>[[ rel.action ]]</td>
+                  <td>[[ rel.object ]]</td>
+                </tr>
+              </tbody>
+            </table>
+            <nav class="d-flex justify-content-center">
+              <ul class="pagination">
+                <li class="page-item" :class="{ disabled: currentPageRelationships === 0 }">
+                  <button class="page-link" @click="prevPageRelationships">Previous</button>
+                </li>
+                <li class="page-item" :class="{ disabled: currentPageRelationships >= totalPagesRelationships - 1 }">
+                  <button class="page-link" @click="nextPageRelationships">Next</button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      delimiters: ['[[', ']]'],
+      data() {
+        return {
+          file: null,
+          entities: [],
+          relationships: [],
+          insights: {},
+          itemsPerPageEntities: 15,
+          currentPageEntities: 0,
+          itemsPerPageRelationships: 15,
+          currentPageRelationships: 0,
+        };
+      },
+      computed: {
+        totalPagesEntities() {
+          return Math.ceil(this.entities.length / this.itemsPerPageEntities);
+        },
+        paginatedEntities() {
+          const start = this.currentPageEntities * this.itemsPerPageEntities;
+          return this.entities.slice(start, start + this.itemsPerPageEntities);
+        },
+        totalPagesRelationships() {
+          return Math.ceil(this.relationships.length / this.itemsPerPageRelationships);
+        },
+        paginatedRelationships() {
+          const start = this.currentPageRelationships * this.itemsPerPageRelationships;
+          return this.relationships.slice(start, start + this.itemsPerPageRelationships);
+        },
+      },
+      methods: {
+        handleFileUpload(event) {
+          this.file = event.target.files[0];
+        },
+        async uploadFile() {
+          if (!this.file) {
+            alert('No file selected!');
+            return;
+          }
+          const formData = new FormData();
+          formData.append('file', this.file);
+
+          const response = await fetch('/upload', { method: 'POST', body: formData });
+          const data = await response.json();
+
+          if (data.error) {
+            alert(`Error: ${data.error}`);
+            return;
+          }
+
+          this.entities = data.entities;
+          this.relationships = data.relationships;
+
+          const insightsResponse = await fetch('/insights', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: data.text }),
+          });
+          this.insights = await insightsResponse.json();
+        },
+        prevPageEntities() {
+          if (this.currentPageEntities > 0) {
+            this.currentPageEntities--;
+          }
+        },
+        nextPageEntities() {
+          if (this.currentPageEntities < this.totalPagesEntities - 1) {
+            this.currentPageEntities++;
+          }
+        },
+        prevPageRelationships() {
+          if (this.currentPageRelationships > 0) {
+            this.currentPageRelationships--;
+          }
+        },
+        nextPageRelationships() {
+          if (this.currentPageRelationships < this.totalPagesRelationships - 1) {
+            this.currentPageRelationships++;
+          }
+        },
+      },
+    }).mount('#app');
+  </script>
 </body>
 </html>
