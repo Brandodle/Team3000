@@ -28,16 +28,32 @@ def clean_entities(entities):
 
 # Process the data
 input_file = "excerpts_parsed.xlsx"
-dataframe = process_data(input_file)
+output_file = "processed_excerpts.xlsx"
+process_data(input_file, output_file)
 
-# Clean the entities and relationships
+# Load the processed data
+dataframe = pd.read_excel(output_file)
+
+# Convert string representations of lists back to actual lists
+dataframe["entities"] = dataframe["entities"].apply(ast.literal_eval)
+dataframe["relationships"] = dataframe["relationships"].apply(ast.literal_eval)
+
+# Flatten the relationships column
 all_entities = [ent for sublist in dataframe["entities"] for ent in sublist]
 all_relationships = [rel for sublist in dataframe["relationships"] for rel in sublist]
 
+# Clean the relationships
 cleaned_entities = clean_entities(all_entities)
 cleaned_relationships = clean_relationships(all_relationships)
 
 # Generate insights
 entity_counts, relationship_counts = generate_insights(dataframe)
 
-# Pass the processed DataFrame directly to Streamlit or for further analysis
+# Save insights to a file (optional)
+with open("insights.txt", "w") as f:
+    f.write("Top Entities:\n")
+    for entity, count in entity_counts.most_common(10):
+        f.write(f"{entity}: {count}\n")
+    f.write("\nTop Relationships:\n")
+    for relationship, count in relationship_counts.most_common(10):
+        f.write(f"{relationship}: {count}\n")
