@@ -8,6 +8,7 @@ from extract_entities_relationships import process_data
 from validate_data import validate_data
 import ast
 import string
+from topic_modeling import perform_lda_topic_modeling, plot_lda_topics  # Import the LDA functions
 
 # Function to visualize entities
 def visualize_entities(entity_counts):
@@ -157,9 +158,7 @@ def main():
         st.download_button("Download the updated file", data=open(output_file, 'rb'), file_name="resolved_data.xlsx")
 
         # Step 3: Process and analyze the cleaned data
-        # Now process the data using the `process_data` function
-        # Pass both input_file and output_file to process_data
-        process_data(input_file, output_file)  # This will process and save the file
+        process_data(input_file, output_file)
 
         # Load processed data
         dataframe = pd.read_excel(output_file)
@@ -190,6 +189,23 @@ def main():
         st.write("### Relationship Network Graph")
         relationship_fig = visualize_relationships(all_relationships)
         st.plotly_chart(relationship_fig, use_container_width=True)
+
+        # Step 4: Perform Topic Modeling using LDA
+        st.write("### Topic Modeling (LDA) Results")
+        num_topics = st.slider("Number of Topics", 2, 10, 5)
+
+        # Perform LDA topic modeling
+        topics, lda_model, vectorizer = perform_lda_topic_modeling(dataframe, num_topics)
+
+        # Display the topics and their top words
+        for topic, words in topics:
+            st.write(f"**{topic}:** {', '.join(words)}")
+
+        # Visualize the topics and top words using Plotly
+        st.write("### Visualizing LDA Topics")
+        lda_fig = plot_lda_topics(lda_model, vectorizer, num_topics)
+        st.plotly_chart(lda_fig, use_container_width=True)
+
     else:
         st.write("Please upload a file to see the analysis.")
 
