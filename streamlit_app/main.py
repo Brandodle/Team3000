@@ -1,7 +1,14 @@
 import pandas as pd
 import ast
-from extract_entities_relationships import process_data
+from extract_entities_relationships import process_data 
 from generate_insights import generate_insights
+from validate_data import process_data
+
+#data validation
+input_file = 'input_file.xlsx'
+output_file = 'cleaned_data.xlsx'
+process_data(input_file, output_file)
+
 
 # Function to clean relationships
 def clean_relationships(relationships):
@@ -34,6 +41,20 @@ process_data(input_file, output_file)
 # Load the processed data
 dataframe = pd.read_excel(output_file)
 
+# Print out the columns to make sure 'entities' exists
+print("Columns in DataFrame:", dataframe.columns)
+
+# Check if 'entities' column exists before applying any operation
+if "entities" in dataframe.columns:
+    # Convert string representations of lists back to actual lists
+    dataframe["entities"] = dataframe["entities"].apply(ast.literal_eval)
+else:
+    print("Error: 'entities' column not found!")
+    # Optionally, raise an error or return
+    raise KeyError("'entities' column not found")
+
+
+
 # Convert string representations of lists back to actual lists
 dataframe["entities"] = dataframe["entities"].apply(ast.literal_eval)
 dataframe["relationships"] = dataframe["relationships"].apply(ast.literal_eval)
@@ -57,3 +78,4 @@ with open("insights.txt", "w") as f:
     f.write("\nTop Relationships:\n")
     for relationship, count in relationship_counts.most_common(10):
         f.write(f"{relationship}: {count}\n")
+        
