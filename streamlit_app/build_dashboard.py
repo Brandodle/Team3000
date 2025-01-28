@@ -10,6 +10,76 @@ import ast
 import string
 from topic_modeling import perform_lda_topic_modeling, plot_lda_topics  # Import the LDA functions
 
+# Set page configuration for wide layout & add custom CSS for styling
+st.set_page_config(layout="wide")
+st.markdown("""
+    <style>
+        /* Global Styling */
+        body {
+            background-color: #f5f5f5;
+        }
+        
+        /* Titles & Headers */
+        .title {
+            text-align: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: #004080;
+        }
+        
+        .subheader {
+            font-size: 24px;
+            font-weight: bold;
+            color: #004080;
+        }
+        
+        /* Cards for Sections */
+        .section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        /* Styled Buttons */
+        .stButton>button {
+            background-color: #004080;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        /* Success Message Styling */
+        .stAlert {
+            background-color: #d1ecf1;
+            color: #004085;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Function to resolve errors and clean the dataset
+def resolve_errors(df):
+    resolved_messages = []
+    duplicates = df[df.duplicated(subset=['Text'], keep=False)]
+    df = df.drop_duplicates(subset=['Text'])
+    if not duplicates.empty:
+        resolved_messages.append(f"✅ Removed {len(duplicates)} duplicate entries.")
+
+    missing_values = df[df['Text'].isna()]
+    if not missing_values.empty:
+        df = df.dropna(subset=['Text'])
+        resolved_messages.append(f"✅ Removed {len(missing_values)} rows with missing text values.")
+
+    first_column_name = df.columns[0]
+    df_combined = df.groupby(first_column_name)['Text'].apply(lambda x: ' '.join(x)).reset_index()
+    resolved_messages.append(f"✅ Combined texts for rows with the same '{first_column_name}'.")
+
+    return df_combined, resolved_messages
+
 # Function to visualize entities
 def visualize_entities(entity_counts):
     top_entities = entity_counts.most_common(10)
@@ -20,7 +90,8 @@ def visualize_entities(entity_counts):
         y=counts, 
         labels={'x': 'Entities', 'y': 'Frequency'},
         title="Top 10 Entities",
-        text=counts
+        text=counts,
+        color_discrete_sequence=['#004080']
     )
     fig.update_traces(texttemplate='%{text}', textposition='outside')
     fig.update_layout(xaxis_tickangle=-45)
@@ -35,25 +106,29 @@ def visualize_relationships(all_relationships):
             G.add_node(subject)
             G.add_node(obj)
             G.add_edge(subject, obj, label=verb)
+    
+    if len(G.nodes) == 0:
+        st.warning("⚠️ No relationships found in the dataset.")
+        return go.Figure()
+
     pos = nx.spring_layout(G)
-    node_x = [pos[node][0] for node in G.nodes()]
-    node_y = [pos[node][1] for node in G.nodes()]
-    edge_x = []
-    edge_y = []
+    edge_x, edge_y = [], []
     for edge in G.edges():
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=0.5, color='red'),
+        line=dict(width=0.5, color='#004080'),
         hoverinfo='none',
         mode='lines'
     ))
     fig.add_trace(go.Scatter(
-        x=node_x, y=node_y,
+        x=[pos[node][0] for node in G.nodes()],
+        y=[pos[node][1] for node in G.nodes()],
         mode='markers+text',
         text=list(G.nodes()),
         textposition="top center",
@@ -68,85 +143,34 @@ def visualize_relationships(all_relationships):
         margin=dict(b=20, l=5, r=5, t=40),
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        height=600
+        height=500
     )
     return fig
 
-def resolve_errors(df):
-    resolved_messages = []
-
-    # 1. Resolve duplicates (exact duplicates in 'Text' column)
-    duplicates = df[df.duplicated(subset=['Text'], keep=False)]
-    df = df.drop_duplicates(subset=['Text'])
-    if not duplicates.empty:
-        resolved_messages.append(f"Removed {len(duplicates)} duplicate entries.")
-
-    # 2. Resolve missing values (optional: remove rows with missing values in 'Text')
-    missing_values = df[df['Text'].isna()]
-    if not missing_values.empty:
-        df = df.dropna(subset=['Text'])
-        resolved_messages.append(f"Removed {len(missing_values)} rows with missing text values.")
-
-    # 3. Resolve subset duplicates (keep the longer text)
-    def clean_text(text):
-        text = text.lower()
-        text = text.translate(str.maketrans('', '', string.punctuation))
-        text = ' '.join(text.split())
-        return text
-
-    cleaned_texts = df['Text'].apply(clean_text).values
-
-    rows_to_remove = set()
-    for i in range(len(cleaned_texts)):
-        for j in range(i + 1, len(cleaned_texts)):
-            text_i = cleaned_texts[i]
-            text_j = cleaned_texts[j]
-            
-            if text_i in text_j or text_j in text_i:
-                if len(text_i) > len(text_j):
-                    rows_to_remove.add(j)
-                else:
-                    rows_to_remove.add(i)
-
-    df = df.drop(rows_to_remove)
-    if rows_to_remove:
-        resolved_messages.append(f"Removed {len(rows_to_remove)} rows due to subset duplicates.")
-
-    # 4. Combine Text for rows where the first column is the same (using .iloc for the first column)
-    first_column_name = df.columns[0]  # Get the name of the first column dynamically
-    df_combined = df.groupby(first_column_name)['Text'].apply(lambda x: ' '.join(x)).reset_index()
-    
-    resolved_messages.append(f"Combined texts for rows with the same '{first_column_name}'.")
-    
-    return df_combined, resolved_messages
-
-
+# Main function
 def main():
-    st.title("Entity and Relationship Dashboard")
+    st.markdown('<h1 class="title">Entity and Relationship Dashboard</h1>', unsafe_allow_html=True)
 
     # File upload section
-    uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
+    uploaded_file = st.file_uploader("📂 Upload an Excel file", type=["xlsx"])
     if uploaded_file:
-        # Save the uploaded file temporarily
         input_file = "uploaded_file.xlsx"
         with open(input_file, "wb") as f:
             f.write(uploaded_file.getbuffer())
 
-        # Load the dataset
         df = pd.read_excel(input_file)
 
         # Step 1: Validate the data and show errors
         validation_log = validate_data(df)
         if not validation_log.empty:
-            st.write("### Validation Errors")
+            st.markdown('<div class="section"><h3 class="subheader">Validation Errors</h3></div>', unsafe_allow_html=True)
             st.write(validation_log)
 
         # Step 2: Automatically resolve the errors
         df, resolved_messages = resolve_errors(df)
         
-        # Display resolved messages to the user
         if resolved_messages:
-            st.write("### Resolved Errors")
+            st.markdown('<div class="section"><h3 class="subheader">✅ Resolved Errors</h3></div>', unsafe_allow_html=True)
             for message in resolved_messages:
                 st.success(message)
 
@@ -154,60 +178,51 @@ def main():
         output_file = "resolved_file.xlsx"
         df.to_excel(output_file, index=False)
 
-        # Allow the user to download the updated file
-        st.download_button("Download the updated file", data=open(output_file, 'rb'), file_name="resolved_data.xlsx")
+        # Download button for cleaned data
+        with open(output_file, "rb") as file:
+            st.download_button(label="⬇️ Download the cleaned Excel file",
+                               data=file,
+                               file_name="resolved_data.xlsx",
+                               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
         # Step 3: Process and analyze the cleaned data
         process_data(input_file, output_file)
 
-        # Load processed data
         dataframe = pd.read_excel(output_file)
         dataframe["entities"] = dataframe["entities"].apply(ast.literal_eval)
         dataframe["relationships"] = dataframe["relationships"].apply(ast.literal_eval)
 
-        # Flatten entities and relationships
         all_entities = [entity for sublist in dataframe["entities"] for entity in sublist]
         all_relationships = [rel for sublist in dataframe["relationships"] for rel in sublist]
 
-        # Generate insights
         entity_counts, relationship_counts = generate_insights(dataframe)
 
-        # Display entities
-        st.write("### Entities")
-        st.write(dataframe["entities"].explode().value_counts().reset_index().rename(columns={"index": "Entity", "entities": "Count"}))
+        # 2x2 Dashboard Layout
+        col1, col2 = st.columns(2)
+        col3, col4 = st.columns(2)
 
-        # Visualize top entities
-        st.write("### Top 10 Entities (Interactive)")
-        entity_fig = visualize_entities(entity_counts)
-        st.plotly_chart(entity_fig, use_container_width=True)
+        with col1:
+            st.subheader("📊 Top 10 Entities")
+            entity_fig = visualize_entities(entity_counts)
+            st.plotly_chart(entity_fig, use_container_width=True)
 
-        # Display relationships
-        st.write("### Relationships")
-        st.write(dataframe["relationships"].explode().value_counts().reset_index().rename(columns={"index": "Relationship", "relationships": "Count"}))
+        with col2:
+            st.subheader("🔗 Relationship Network")
+            relationship_fig = visualize_relationships(all_relationships)
+            st.plotly_chart(relationship_fig, use_container_width=True)
 
-        # Visualize relationships
-        st.write("### Relationship Network Graph")
-        relationship_fig = visualize_relationships(all_relationships)
-        st.plotly_chart(relationship_fig, use_container_width=True)
+        with col3:
+            st.subheader("📂 Topic Modeling")
+            num_topics = st.slider("Number of Topics", 2, 10, 5)
+            topics, lda_model, vectorizer = perform_lda_topic_modeling(dataframe, num_topics)
+            with st.expander("📌 View Topics", expanded=True):
+                for topic, words in topics:
+                    st.write(f"**{topic}:** {', '.join(words)}")
 
-        # Step 4: Perform Topic Modeling using LDA
-        st.write("### Topic Modeling (LDA) Results")
-        num_topics = st.slider("Number of Topics", 2, 10, 5)
-
-        # Perform LDA topic modeling
-        topics, lda_model, vectorizer = perform_lda_topic_modeling(dataframe, num_topics)
-
-        # Display the topics and their top words
-        for topic, words in topics:
-            st.write(f"**{topic}:** {', '.join(words)}")
-
-        # Visualize the topics and top words using Plotly
-        st.write("### Visualizing LDA Topics")
-        lda_fig = plot_lda_topics(lda_model, vectorizer, num_topics)
-        st.plotly_chart(lda_fig, use_container_width=True)
-
-    else:
-        st.write("Please upload a file to see the analysis.")
+        with col4:
+            st.subheader("📑 LDA Topic Visualization")
+            lda_fig = plot_lda_topics(lda_model, vectorizer, num_topics)
+            st.plotly_chart(lda_fig, use_container_width=True)
 
 if __name__ == "__main__":
     main()
