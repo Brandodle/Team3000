@@ -9,6 +9,8 @@ from validate_data import validate_data
 import ast
 import string
 from topic_modeling import perform_lda_topic_modeling, plot_lda_topics  # Import the LDA functions
+from text_search import highlight_entities
+
 
 # Set page configuration for wide layout & add custom CSS for styling
 st.set_page_config(layout="wide")
@@ -200,6 +202,7 @@ def main():
         # 2x2 Dashboard Layout
         col1, col2 = st.columns(2)
         col3, col4 = st.columns(2)
+        col5, col6 = st.columns(2)  # Third Row (Text Search + Empty Space)
 
         with col1:
             st.subheader("📊 Top 10 Entities")
@@ -223,6 +226,37 @@ def main():
             st.subheader("📑 LDA Topic Visualization")
             lda_fig = plot_lda_topics(lda_model, vectorizer, num_topics)
             st.plotly_chart(lda_fig, use_container_width=True)
+
+        with col5:
+            st.subheader("🔍 Entity Search and Highlight Tool")
+
+            # Text Input Box for User Search
+            user_text = st.text_area("Enter text for entity extraction:", key="entity_search")
+
+            if st.button("Highlight Entities", key="highlight_button"):
+                if user_text.strip():  # Ensure text is not empty
+                    highlighted_text, extracted_entities = highlight_entities(user_text)
+
+                    # Display highlighted text
+                    st.markdown(f"<div>{highlighted_text}</div>", unsafe_allow_html=True)
+
+                    # Display extracted entities
+                    st.subheader("Extracted Entities")
+                    st.write(extracted_entities)
+                else:
+                    st.warning("⚠️ Please enter some text before clicking highlight.")
+
+ 
+    # Custom CSS for styling highlights
+    st.markdown("""
+        <style>
+            .highlight { font-weight: bold; padding: 2px 4px; border-radius: 3px; }
+            .person { background-color: lightblue; }
+            .org { background-color: yellow; }
+            .gpe { background-color: lightgreen; }
+            .date { background-color: orange; }
+        </style>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
