@@ -202,7 +202,7 @@ def main():
         # 2x2 Dashboard Layout
         col1, col2 = st.columns(2)
         col3, col4 = st.columns(2)
-        col5, col6 = st.columns(2)  # Third Row (Text Search + Empty Space)
+        col5 = st.container()
 
         with col1:
             st.subheader("📊 Top 10 Entities")
@@ -228,23 +228,45 @@ def main():
             st.plotly_chart(lda_fig, use_container_width=True)
 
         with col5:
-            st.subheader("🔍 Entity Search and Highlight Tool")
+            # st.subheader("🔍 Entity Search and Highlight Tool")
 
-            # Text Input Box for User Search
-            user_text = st.text_area("Enter text for entity extraction:", key="entity_search")
+            # # Text Input Box for User Search
+            # user_text = st.text_area("Enter text for entity extraction:", key="entity_search")
 
-            if st.button("Highlight Entities", key="highlight_button"):
-                if user_text.strip():  # Ensure text is not empty
-                    highlighted_text, extracted_entities = highlight_entities(user_text)
+            # if st.button("Highlight Entities", key="highlight_button"):
+            #     if user_text.strip():  # Ensure text is not empty
+            #         highlighted_text, extracted_entities = highlight_entities(user_text)
 
-                    # Display highlighted text
-                    st.markdown(f"<div>{highlighted_text}</div>", unsafe_allow_html=True)
+            #         # Display highlighted text
+            #         st.markdown(f"<div>{highlighted_text}</div>", unsafe_allow_html=True)
 
-                    # Display extracted entities
-                    st.subheader("Extracted Entities")
-                    st.write(extracted_entities)
+            #         # Display extracted entities
+            #         st.subheader("Extracted Entities")
+            #         st.write(extracted_entities)
+            #     else:
+            #         st.warning("⚠️ Please enter some text before clicking highlight.")
+            st.subheader("🔍 Search Tool")
+
+            # Search box
+            search_query = st.text_input("Enter an incident or keyword to search:", key="incident_search")
+
+            if search_query:
+                matching_rows = dataframe[dataframe["Text"].str.contains(search_query, case=False, na=False)]
+
+                if not matching_rows.empty:
+                    st.markdown(f"### 🎯 Results for: **{search_query}**")
+
+                    for index, row in matching_rows.iterrows():
+                        # Remove excessive newlines and format as a single paragraph
+                        formatted_text = " ".join(row['Text'].splitlines())  # Converts multiple lines into a single paragraph
+
+                        # Display the formatted text as a clean paragraph
+                        st.markdown(f"📌 {formatted_text}", unsafe_allow_html=True)
+
                 else:
-                    st.warning("⚠️ Please enter some text before clicking highlight.")
+                    st.warning("⚠️ No matching incidents found.")
+
+
 
  
     # Custom CSS for styling highlights
