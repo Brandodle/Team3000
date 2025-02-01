@@ -15,10 +15,6 @@
 - [Features](#features)
 - [Step to Run Codes Locally](#step-to-run-codes-locally)
 - [Tech Stack](#tech-stack)
-  - [Frontend UI](#frontend-ui)
-  - [Frontend Framework](#frontend-framework)
-  - [Frontend Styling](#frontend-styling)
-  - [Backend](#backend)
 
 ## Team Members
 | Team Member Name        | SMU Email Address                  |
@@ -29,48 +25,62 @@
 | Tan Wei Jun Brandon     | brandon.tan.2023@scis.smu.edu.sg  |
 
 ## Project Overview
+Our solution is an NLP-powered data analytics tool designed for Internal Security Department (ISD) to process and analyze unstructured text data. It automates entity recognition, relationship mapping, topic modeling, and keyword search, converting raw text into structured insights. Users can upload datasets, clean errors, explore entity connections, detect key themes using LDA, and perform text search—all through interactive visualizations such as bar charts and network graphs. Built with Streamlit (frontend) and Python (Flask backend), the system is scalable and tailored for real-time intelligence analysis, enhancing threat detection and decision-making for ISD.
+
 
 
 ### Features
-1. xx
-   - xx
+1. File Upload, Validation, and Error Resolution
+   - Users can upload Excel files, and the system automatically detects and resolves errors like duplicates and missing values, ensuring data accuracy.
 
-2. xx
-   - xx
+2. Entity Analysis
+   - Extracts and visualizes key entities in a bar chart and relationship network graph, helping users identify patterns and connections.
 
-3. xx
-   - xx
+3. Topic Modeling
+   - Uses LDA to categorize text into meaningful topics, displaying key terms and trends for deeper content analysis.
+
+4. Entity Search & Highlight Tool
+   - Allows users to search for specific keywords, highlighting occurrences and providing quick insights into entity presence across documents.
 
 
 ## Step to Run Codes Locally
 ```
-pip install -r requirements.txt
+cd streamlit_app
 ```
 
 ```
-python -m spacy download en_core_web_sm
+py -3.9 -m venv spacy_env
 ```
 
 ```
-cd app
+spacy_env\Scripts\activate
 ```
 
 ```
-python app.py
+pip install -r requirements1.txt
+```
+
+```
+streamlit run build_dashboard.py
 ```
 
 ## Tech Stack
 #### Frontend UI
-- [![HTML5](https://img.shields.io/badge/HTML5-E34F26.svg?style=for-the-badge&logo=HTML5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5)
-- [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E.svg?style=for-the-badge&logo=JavaScript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-- [![CSS3](https://img.shields.io/badge/CSS3-1572B6.svg?style=for-the-badge&logo=CSS3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
-
-#### Frontend Framework
-- [![Vue.js](https://img.shields.io/badge/Vue.js-4FC08D.svg?style=for-the-badge&logo=Vue.js&logoColor=white)](https://vuejs.org/)
-
-#### Frontend Styling
-- [![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3.svg?style=for-the-badge&logo=Bootstrap&logoColor=white)](https://getbootstrap.com/)
+- [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B.svg?style=for-the-badge&logo=Streamlit&logoColor=white)](https://streamlit.io/)
 
 #### Backend
 - [![Python](https://img.shields.io/badge/Python-3776AB.svg?style=for-the-badge&logo=Python&logoColor=white)](https://www.python.org/)
-- [![Flask](https://img.shields.io/badge/Flask-000000.svg?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+
+#### Data Processing & NLP
+- [![Pandas](https://img.shields.io/badge/Pandas-150458.svg?style=for-the-badge&logo=Pandas&logoColor=white)](https://pandas.pydata.org/)
+- [![SpaCy](https://img.shields.io/badge/SpaCy-09A3D5.svg?style=for-the-badge&logo=spaCy&logoColor=white)](https://spacy.io/)
+- [![Gensim](https://img.shields.io/badge/Gensim-0A1A2F.svg?style=for-the-badge&logoColor=white)](https://radimrehurek.com/gensim/)
+- [![Scikit-learn](https://img.shields.io/badge/Scikit--Learn-F7931E.svg?style=for-the-badge&logo=Scikit-learn&logoColor=white)](https://scikit-learn.org/)
+
+#### Data Visualization
+- [![Plotly](https://img.shields.io/badge/Plotly-3F4F75.svg?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com/)
+- [![Matplotlib](https://img.shields.io/badge/Matplotlib-11557C.svg?style=for-the-badge&logo=Python&logoColor=white)](https://matplotlib.org/)
+- [![NetworkX](https://img.shields.io/badge/NetworkX-005A9C.svg?style=for-the-badge&logo=Python&logoColor=white)](https://networkx.github.io/)
+
+#### Deployment & Infrastructure
+- [![Streamlit Cloud](https://img.shields.io/badge/Streamlit%20Cloud-FF4B4B.svg?style=for-the-badge&logo=Streamlit&logoColor=white)](https://streamlit.io/cloud)
